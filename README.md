@@ -41,7 +41,7 @@ This repository has been used to participate in the remote sensing semantic imag
 >  `python train.py --model DeepLabV3Plus --backBone ResNet152 --lr_scheduler cosine_decay  --lr_warmup True`  
   
 ### 4. Download pre-trained weights  
->  [Link(TBD)](#)  
+>  [Link (TBD)](#)  
 
 ### 5. Inference  
 >  `python predict.py`  
