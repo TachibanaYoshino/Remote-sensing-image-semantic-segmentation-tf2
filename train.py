@@ -3,7 +3,7 @@ from tensorflow.keras import optimizers
 from tools.callbacks import LearningRateScheduler
 from tools.learning_rate import lr_decays_func
 from tools.metrics import MeanIoU
-from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.callbacks import ModelCheckpoint,ReduceLROnPlateau
 from builders import builder
 import tensorflow as tf
 import argparse
@@ -13,14 +13,14 @@ from config import Config
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 cfg = Config('train')
 
-config = tf.compat.v1.ConfigProto()
-config.gpu_options.allow_growth = True
-tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
+# config = tf.compat.v1.ConfigProto()
+# config.gpu_options.allow_growth = True
+# tf.compat.v1.keras.backend.set_session(tf.compat.v1.Session(config=config))
 
 def args_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help='Choose the semantic segmentation methods.', type=str, default='DeepLabV3Plus')
-    parser.add_argument('--backBone', help='Choose the backbone model.', type=str, default='ResNet152')
+    parser.add_argument('--backBone', help='Choose the backbone model.', type=str, default='DenseNet121')
     parser.add_argument('--num_epochs', help='num_epochs', type=int, default=cfg.epoch)
 
     parser.add_argument('--weights', help='The path of weights to be loaded.', type=str, default='weights')
@@ -45,9 +45,9 @@ def train(args):
     model.summary()
 
     # compile the model
-    #sgd = optimizers.SGD(lr=cfg.lr, momentum=0.9)
-    nadam = optimizers.Nadam(lr=cfg.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
-    model.compile(optimizer=nadam, loss='categorical_crossentropy', metrics=[MeanIoU(cfg.n_classes)])
+    sgd = optimizers.SGD(lr=0.0001, momentum=0.9)
+    adam = optimizers.Adam(lr=cfg.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-8)
+    model.compile(optimizer=sgd, loss='categorical_crossentropy', metrics=[MeanIoU(cfg.n_classes)])
 
     # checkpoint setting
     model_checkpoint = ModelCheckpoint(model_weights, monitor='val_loss', save_best_only=True, mode='auto')
@@ -56,8 +56,10 @@ def train(args):
     lr_decay = lr_decays_func(args.lr_scheduler, args.learning_rate, args.num_epochs, args.lr_warmup)
     learning_rate_scheduler = LearningRateScheduler(lr_decay, args.learning_rate, args.lr_warmup, cfg.steps_per_epoch,
                                                     num_epochs=args.num_epochs, verbose=1)
+    Reduce_LR = ReduceLROnPlateau(monitor='val_mean_iou', mode='max', patience=2, verbose=1, factor=0.2, min_lr=1e-7)
+    # callbacks = [model_checkpoint]
+    callbacks = [model_checkpoint, Reduce_LR]
 
-    callbacks = [model_checkpoint]
 
     # training...
     train_set = dataloader.train_data_generator(cfg.train_data_path, cfg.train_label_path, cfg.batch_size,
@@ -71,6 +73,25 @@ def train(args):
         # if load success, output info
         print('loaded :' + '-' * 8 + weights_dir + '/' + a[-1])
         start_epoch = int(a[-1][8:11])
+
+        for layer in model.layers:
+            layer.trainable=False
+        for i in range(-1, -27, -1):
+            model.layers[i].trainable = True
+        model.summary()
+
+    print("start_epoch: ", start_epoch)
+    if start_epoch == 0:
+        backbone_pretrained_path = "backBone_pretrained_weights/" + 'densenet121_weights_tf_dim_ordering_tf_kernels_notop.h5'
+        model.load_weights(backbone_pretrained_path, by_name=True)
+        print(f"loaded : {backbone_pretrained_path}" )
+
+        print(len(model.layers))
+        for layer in model.layers:
+            layer.trainable=False
+        for i in range(-1, -27, -1):
+            model.layers[i].trainable = True
+        model.summary()
 
     model.fit(train_set,
               steps_per_epoch=cfg.steps_per_epoch,

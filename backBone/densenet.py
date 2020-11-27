@@ -117,25 +117,25 @@ class DenseNet(object):
         x = layers.Activation('relu', name='conv1/relu')(x)
         x = layers.ZeroPadding2D(padding=((1, 1), (1, 1)))(x)
         x = layers.MaxPooling2D(3, strides=2, name='pool1')(x)
-        c1 = x
+        c1 = x  # 64
 
         x = self._dense_block(x, blocks[0], name='conv2')
         x = self._transition_block(x, 0.5, name='pool2')
-        c2 = x
+        c2 = x  # 32
 
         x = self._dense_block(x, blocks[1], name='conv3')
         x = self._transition_block(x, 0.5, name='pool3', dilation=dilation[0])
-        c3 = x
+        c3 = x   # 16
 
         x = self._dense_block(x, blocks[2], name='conv4', dilation=dilation[0])
-        x = self._transition_block(x, 0.5, name='pool4', dilation=dilation[1])
-        c4 = x
+        x = self._transition_block(x, 0.5, name='pool4', dilation=dilation[1])   #  dilation[1] ==2
+        c4 = x   # 16
 
-        x = self._dense_block(x, blocks[3], name='conv5', dilation=dilation[1])
+        x = self._dense_block(x, blocks[3], name='conv5', dilation=dilation[1])  #  dilation[1] ==2
         x = layers.BatchNormalization(
             axis=bn_axis, epsilon=1.001e-5, name='bn')(x)
         x = layers.Activation('relu', name='relu')(x)
-        c5 = x
+        c5 = x   # 16
 
         self.outputs = {'c1': c1,
                         'c2': c2,

@@ -9,15 +9,15 @@ class Config():
     def get_attr(self,flag):
 
         if flag.lower() == 'train':
-            self.epoch = 200
+            self.epoch = 150
             self.batch_size = 16
-            self.lr = 0.002
+            self.lr = 0.008
             self.train_data_path = 'data/train/image'
             self.train_label_path = 'data/train/label'
             self.val_data_path = 'data/val/image'
             self.val_label_path = 'data/val/label'
-            self.data_augment = True
-            self.weight_path = 'weights/aspp'
+            self.data_augment = False
+            self.weight_path = 'weights/custom'
             self.train_number = self.get_train_number()
             self.val_number = self.get_val_number()
             self.steps_per_epoch = self.train_number//self.batch_size if self.train_number % self.batch_size ==0 else self.train_number//self.batch_size +1
@@ -26,7 +26,8 @@ class Config():
         if flag.lower() == 'test':
             self.batch_size = 32
             self.data_path = 'data/image_A'
-            self.weight_path = 'weights/DenseNet121_DeepLabV3Plus/weights-200-0.4155-0.7409.h5'
+            # self.weight_path = 'weights/DenseNet121_DeepLabV3Plus---/weights-219-0.4049-0.7466.h5'
+            self.weight_path = 'weights/custom-2/weights-130-0.5092-0.6668.h5'
             self.output_path= 'results'
             self.image_number = self.get_test_number()
             self.steps = self.image_number//self.batch_size if self.image_number % self.batch_size ==0 else self.image_number//self.batch_size +1
